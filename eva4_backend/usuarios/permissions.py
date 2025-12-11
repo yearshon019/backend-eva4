@@ -1,23 +1,40 @@
-from rest_framework.permissions import BasePermission, SAFE_METHODS
+from rest_framework.permissions import BasePermission
+from rest_framework import permissions
 
 class SoloAdminPuedeEscribir(BasePermission):
     """
-    - Si NO está autenticado: no pasa.
-    - Si es GET/HEAD/OPTIONS: pasa siempre.
-    - Si es POST/PUT/PATCH/DELETE: solo si el rol es ADMIN.
+    Permite solo lectura a OPERADORES.
+    Permite lectura + escritura a ADMIN.
     """
+
+    message = "No tiene permisos para realizar esta acción."
 
     def has_permission(self, request, view):
         user = request.user
 
+        # Si no está autenticado → DRF devolverá 401 automáticamente
         if not user or not user.is_authenticated:
+            self.message = "Debe autenticarse para acceder a este recurso."
             return False
 
-        if request.method in SAFE_METHODS:
+        # Si el usuario no tiene perfil (raro, pero seguro)
+        perfil = getattr(user, "perfilusuario", None)
+        if perfil is None:
+            self.message = "El usuario no posee un rol válido."
+            return False
+
+        # ADMIN → acceso total
+        if perfil.rol == "ADMIN":
             return True
 
-        perfil = getattr(user, 'perfil', None)
-        if perfil and perfil.rol == 'ADMIN':
-            return True
+        # OPERADOR → solo lectura
+        if perfil.rol == "OPERADOR":
+            solo_lectura = ["GET", "HEAD", "OPTIONS"]
+            if request.method in solo_lectura:
+                return True
+            self.message = "Su rol OPERADOR no permite modificar datos."
+            return False
 
+        # Rol desconocido
+        self.message = "Rol de usuario no reconocido."
         return False

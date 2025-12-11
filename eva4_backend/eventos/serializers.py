@@ -15,3 +15,8 @@ class EventoAccesoSerializer(serializers.ModelSerializer):
             'fecha_hora',
         ]
         read_only_fields = ['fecha_hora']
+
+    def validate_tipo_evento(self, value):
+        if value not in ["ACCESO", "ERROR"]:
+            raise serializers.ValidationError("Tipo de evento no válido.")
+        return value

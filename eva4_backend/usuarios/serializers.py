@@ -4,7 +4,6 @@ from .models import PerfilUsuario
 
 User = get_user_model()
 
-
 class UsuarioSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -17,3 +16,9 @@ class PerfilUsuarioSerializer(serializers.ModelSerializer):
     class Meta:
         model = PerfilUsuario
         fields = ['id', 'user', 'rol']
+
+    def validate_rol(self, value):
+        roles_validos = ['ADMIN', 'OPERADOR']
+        if value not in roles_validos:
+            raise serializers.ValidationError("El rol debe ser ADMIN u OPERADOR.")
+        return value
